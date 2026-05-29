@@ -1,0 +1,33 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.local
+
+# iOS
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/local.properties
+android/.idea/
+android/app/release/
+*.keystore
+!debug.keystore
+*.jks
+key.properties
+
+# Firebase — contains API keys, keep out of public repos
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+
+# Capacitor
+.capacitor/

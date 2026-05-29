@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0B0B0F" />
+  <title>EgoCore</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      background: #0B0B0F; color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
+    .wrap {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+    }
+    .logo {
+      width: 96px; height: 96px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #7C5CFF 0%, #3D2BFF 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 40px; letter-spacing: -1px;
+      box-shadow: 0 12px 40px rgba(124, 92, 255, 0.35);
+    }
+    .name { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: #7C5CFF;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .offline {
+      display: none;
+      text-align: center; padding: 0 32px;
+    }
+    .offline.show { display: block; }
+    .offline h2 { margin: 0 0 8px; font-size: 18px; }
+    .offline p { margin: 0; opacity: 0.7; font-size: 14px; }
+    .retry {
+      margin-top: 20px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: transparent; color: #fff; font-size: 15px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">E</div>
+    <div class="name">EgoCore</div>
+    <div class="spinner" id="spinner"></div>
+    <div class="offline" id="offline">
+      <h2>No internet connection</h2>
+      <p>Please check your network and try again.</p>
+      <button class="retry" onclick="location.reload()">Retry</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // This bundled shell is the offline fallback. When network is available,
+    // Capacitor's server.url config takes over and loads https://egocore.ai/
+    // directly. We still init native plugins here so the first launch
+    // registers push tokens before navigating to the remote site.
+
+    const showOffline = () => {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('offline').classList.add('show');
+    };
+
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        const { SplashScreen } = await import('@capacitor/splash-screen');
+        const { Network } = await import('@capacitor/network');
+
+        const status = await Network.getStatus();
+        if (!status.connected) {
+          showOffline();
+        }
+
+        Network.addListener('networkStatusChange', (s) => {
+          if (s.connected) location.reload();
+        });
+
+        const perm = await PushNotifications.checkPermissions();
+        if (perm.receive === 'prompt') {
+          const req = await PushNotifications.requestPermissions();
+          if (req.receive === 'granted') await PushNotifications.register();
+        } else if (perm.receive === 'granted') {
+          await PushNotifications.register();
+        }
+
+        PushNotifications.addListener('registration', (token) => {
+          // POST token to your backend so you can target this device.
+          // Example:
+          // fetch('https://egocore.ai/api/push/register', {
+          //   method: 'POST',
+          //   headers: { 'Content-Type': 'application/json' },
+          //   body: JSON.stringify({ token: token.value, platform: Capacitor.getPlatform() })
+          // }).catch(() => {});
+          console.log('Push token:', token.value);
+        });
+
+        PushNotifications.addListener('pushNotificationActionPerformed', (n) => {
+          const url = n.notification.data?.url;
+          if (url && url.startsWith('https://egocore.ai/')) {
+            window.location.href = url;
+          }
+        });
+
+        await SplashScreen.hide();
+      }
+    } catch (e) {
+      console.error('Native init failed:', e);
+    }
+  </script>
+</body>
+</html>

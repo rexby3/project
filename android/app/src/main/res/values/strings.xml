@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EgoCore</string>
+    <string name="title_activity_main">EgoCore</string>
+    <string name="package_name">ai.egocore.app</string>
+    <string name="custom_url_scheme">ai.egocore.app</string>
+</resources>
