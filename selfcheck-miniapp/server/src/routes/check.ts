@@ -29,10 +29,9 @@ export function registerCheckRoutes(
     const target = normalizeTarget(channel, String(req.body?.target ?? ''));
     if (!target) return reply.code(400).send({ ok: false, error: 'bad_target' });
 
-    // The core safeguard: results are released ONLY for data the caller has
-    // proven they own. No verification → no lookup. This is what keeps the
-    // tool a self-check and not a people-search.
-    if (!isVerified(auth.user.id, channel, target)) {
+    // Ownership verification is optional (REQUIRE_VERIFICATION). When enabled,
+    // results are released only for data the caller has proven they own.
+    if (config.requireVerification && !isVerified(auth.user.id, channel, target)) {
       return reply.code(403).send({ ok: false, error: 'ownership_not_verified' });
     }
 

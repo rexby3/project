@@ -34,6 +34,7 @@ export interface Config {
   codeTtlSeconds: number;
   maxVerifyAttempts: number;
   verifiedTtlSeconds: number;
+  requireVerification: boolean;
   isProd: boolean;
 }
 
@@ -122,6 +123,7 @@ export function loadConfig(): Config {
     codeTtlSeconds: num(process.env.CODE_TTL_SECONDS, 600),
     maxVerifyAttempts: num(process.env.MAX_VERIFY_ATTEMPTS, 5),
     verifiedTtlSeconds: num(process.env.VERIFIED_TTL_SECONDS, 1800),
+    requireVerification: bool(process.env.REQUIRE_VERIFICATION, true),
     isProd,
   };
 

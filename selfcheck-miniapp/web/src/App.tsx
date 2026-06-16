@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ApiError, api } from './api';
+import { useEffect, useState } from 'react';
+import { ApiError, api, getServerConfig } from './api';
 import { ReportView } from './components/Report';
 import { haptic, isInsideTelegram } from './telegram';
 import type { Channel, Report } from './types';
@@ -42,6 +42,13 @@ export function App(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [requireVerification, setRequireVerification] = useState(true);
+
+  useEffect(() => {
+    getServerConfig()
+      .then((c) => setRequireVerification(c.requireVerification))
+      .catch(() => setRequireVerification(true));
+  }, []);
 
   function reset(): void {
     setStep('form');
@@ -86,6 +93,23 @@ export function App(): JSX.Element {
     }
   }
 
+  async function handleDirectCheck(e: React.FormEvent): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await api.check(channel, target);
+      haptic('success');
+      setReport(res.report);
+      setStep('report');
+    } catch (err) {
+      haptic('error');
+      setError(describeError(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="app">
       <header className="app__header">
@@ -94,8 +118,17 @@ export function App(): JSX.Element {
       </header>
 
       <div className="banner" role="note">
-        🔒 Проверять можно только <b>свои</b> данные. Отчёт открывается лишь после
-        подтверждения кодом на твой email или номер.
+        {requireVerification ? (
+          <>
+            🔒 Проверять можно только <b>свои</b> данные. Отчёт открывается лишь после
+            подтверждения кодом на твой email или номер.
+          </>
+        ) : (
+          <>
+            🔒 Показываем <b>факт</b> утечек из публичных баз (как Have I Been Pwned):
+            где засветился адрес и какие данные. Сами пароли и записи не раскрываются.
+          </>
+        )}
       </div>
 
       {!isInsideTelegram() && (
@@ -107,7 +140,7 @@ export function App(): JSX.Element {
       {error && <div className="alert" role="alert">{error}</div>}
 
       {step === 'form' && (
-        <form className="card" onSubmit={handleRequestCode}>
+        <form className="card" onSubmit={requireVerification ? handleRequestCode : handleDirectCheck}>
           <div className="segmented">
             <button
               type="button"
@@ -142,10 +175,14 @@ export function App(): JSX.Element {
           </label>
 
           <button className="btn btn--primary" type="submit" disabled={loading || !target}>
-            {loading ? 'Отправляем…' : 'Получить код'}
+            {loading
+              ? requireVerification ? 'Отправляем…' : 'Проверяем…'
+              : requireVerification ? 'Получить код' : 'Проверить'}
           </button>
           <p className="hint">
-            Мы отправим одноразовый код, чтобы убедиться, что это твои данные.
+            {requireVerification
+              ? 'Мы отправим одноразовый код, чтобы убедиться, что это твои данные.'
+              : 'Покажем, в каких известных утечках встречается адрес и какие данные утекли.'}
           </p>
         </form>
       )}

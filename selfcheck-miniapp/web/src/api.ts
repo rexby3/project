@@ -49,3 +49,13 @@ export const api = {
   check: (channel: Channel, target: string) =>
     post<CheckResponse>('/api/check', { channel, target }),
 };
+
+export async function getServerConfig(): Promise<{ requireVerification: boolean }> {
+  try {
+    const res = await fetch('/api/health');
+    const data = (await res.json()) as { requireVerification?: boolean };
+    return { requireVerification: data?.requireVerification ?? true };
+  } catch {
+    return { requireVerification: true };
+  }
+}

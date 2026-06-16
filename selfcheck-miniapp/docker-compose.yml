@@ -1,7 +1,9 @@
 # SelfCheck Mini App — isolated container.
-# Binds ONLY to host loopback (127.0.0.1:8090); nginx on the host
-# reverse-proxies the public HTTPS subdomain to it. The existing project
-# on the server is not touched.
+# Uses the host network so the container has the same outbound internet as the
+# server itself (required on hosts where custom iptables / VPN rules — e.g.
+# marzban — break Docker's bridge networking). The app binds ONLY to
+# 127.0.0.1:8090; nginx reverse-proxies the public HTTPS subdomain to it.
+# The existing project on the server is not touched.
 
 services:
   selfcheck:
@@ -9,10 +11,9 @@ services:
     image: selfcheck-miniapp:latest
     container_name: selfcheck-miniapp
     restart: unless-stopped
+    network_mode: host
     env_file: .env
     environment:
       NODE_ENV: production
-      PORT: "8080"
-      HOST: "0.0.0.0"
-    ports:
-      - "127.0.0.1:8090:8080"
+      PORT: "8090"
+      HOST: "127.0.0.1"

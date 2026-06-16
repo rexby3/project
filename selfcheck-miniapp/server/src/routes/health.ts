@@ -10,6 +10,7 @@ export function registerHealthRoutes(
   app.get('/api/health', async () => ({
     ok: true,
     mode: config.mockBreaches ? 'demo' : 'live',
+    requireVerification: config.requireVerification,
     providers: {
       email: { name: providers.email.name, available: providers.email.available },
       phone: { name: providers.phone.name, available: providers.phone.available },
