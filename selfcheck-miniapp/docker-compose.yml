@@ -1,0 +1,18 @@
+# SelfCheck Mini App — isolated container.
+# Binds ONLY to host loopback (127.0.0.1:8090); nginx on the host
+# reverse-proxies the public HTTPS subdomain to it. The existing project
+# on the server is not touched.
+
+services:
+  selfcheck:
+    build: .
+    image: selfcheck-miniapp:latest
+    container_name: selfcheck-miniapp
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+      HOST: "0.0.0.0"
+    ports:
+      - "127.0.0.1:8090:8080"

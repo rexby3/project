@@ -59,10 +59,16 @@ export function loadConfig(): Config {
 
   // Node >=20.12 / 22 can load .env natively; ignore if the file is absent.
   const loadEnvFile = (process as unknown as { loadEnvFile?: (p?: string) => void }).loadEnvFile;
-  try {
-    loadEnvFile?.();
-  } catch {
-    /* no .env file — rely on real environment variables */
+  // Try the package dir first, then the project root: npm workspace scripts run
+  // with cwd set to the workspace (server/), but the .env usually lives at the
+  // root. In Docker, env vars are injected directly, so neither file is needed.
+  for (const envPath of ['.env', '../.env']) {
+    try {
+      loadEnvFile?.(envPath);
+      break;
+    } catch {
+      /* not present at this path — try the next */
+    }
   }
 
   const isProd = str(process.env.NODE_ENV) === 'production';
