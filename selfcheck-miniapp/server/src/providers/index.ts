@@ -1,7 +1,7 @@
 import type { Config } from '../config';
 import { createHibpProvider } from './hibp';
+import { createLeakCheckProvider } from './leakcheck';
 import { createMockEmailProvider, createMockPhoneProvider } from './mock';
-import { createStubPhoneProvider } from './phone';
 import type { EmailBreachProvider, PhoneBreachProvider } from './types';
 
 export interface Providers {
@@ -17,10 +17,12 @@ export function createProviders(config: Config): Providers {
     };
   }
 
+  // Free breach-presence source (LeakCheck public API) for both channels.
+  // If an HIBP key is configured, prefer it for email.
+  const leak = createLeakCheckProvider();
+
   return {
-    email: createHibpProvider(config.hibpApiKey),
-    // Only the documented stub ships by default. Add real, lawful phone
-    // providers here keyed off config.phoneProvider.
-    phone: createStubPhoneProvider(),
+    email: config.hibpApiKey ? createHibpProvider(config.hibpApiKey) : leak,
+    phone: leak,
   };
 }

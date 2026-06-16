@@ -7,7 +7,7 @@ function formatDate(value?: string): string {
   return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long' });
 }
 
-function BreachCard({ item }: { item: BreachItem }): JSX.Element {
+function BreachCard({ item, showChips }: { item: BreachItem; showChips: boolean }): JSX.Element {
   return (
     <li className="breach">
       <div className="breach__head">
@@ -22,7 +22,7 @@ function BreachCard({ item }: { item: BreachItem }): JSX.Element {
           <span>· {item.pwnCount.toLocaleString('ru-RU')} записей</span>
         )}
       </div>
-      {item.dataClasses.length > 0 && (
+      {showChips && item.dataClasses.length > 0 && (
         <div className="chips">
           {item.dataClasses.map((c) => (
             <span className="chip" key={c}>{c}</span>
@@ -36,6 +36,7 @@ function BreachCard({ item }: { item: BreachItem }): JSX.Element {
 
 export function ReportView({ report }: { report: Report }): JSX.Element {
   const clean = report.breachCount === 0;
+  const showCardChips = report.breaches.length <= 6;
 
   return (
     <div className="report">
@@ -57,12 +58,23 @@ export function ReportView({ report }: { report: Report }): JSX.Element {
         <div className="banner banner--note" key={note}>{note}</div>
       ))}
 
+      {report.dataClasses.length > 0 && (
+        <section className="section">
+          <h2 className="section__title">Какие данные засветились</h2>
+          <div className="chips">
+            {report.dataClasses.map((c) => (
+              <span className="chip" key={c}>{c}</span>
+            ))}
+          </div>
+        </section>
+      )}
+
       {report.breaches.length > 0 && (
         <section className="section">
           <h2 className="section__title">Где засветились данные</h2>
           <ul className="breach-list">
-            {report.breaches.map((b) => (
-              <BreachCard item={b} key={`${b.source}:${b.name}`} />
+            {report.breaches.map((b, i) => (
+              <BreachCard item={b} showChips={showCardChips} key={`${b.source}:${b.name}:${i}`} />
             ))}
           </ul>
         </section>
